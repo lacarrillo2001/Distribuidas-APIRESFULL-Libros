@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  libro:
+    build: .
+    image: libro:latest
+    container_name: libro
+    ports:
+      - "8001:8001"
+    environment:
+      - OAUTH_ISSUER_URI=http://oauth-server-oauth-server-1:9000
+      - OAUTH_CLIENT_ID=libro
+      - OAUTH_CLIENT_SECRET=123456
+    networks:
+      - mi_red
+
+networks:
+  mi_red:
+    external: true

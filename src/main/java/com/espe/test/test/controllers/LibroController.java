@@ -1,7 +1,10 @@
 package com.espe.test.test.controllers;
 
+import com.espe.test.test.clientes.AutorClienteRest;
+import com.espe.test.test.models.dto.AutorDTO;
 import com.espe.test.test.models.entities.Libros;
 import com.espe.test.test.services.LibroService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -10,7 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -23,6 +28,9 @@ public class LibroController {
 
     @Autowired
     private LibroService service;
+
+    @Autowired
+    private AutorClienteRest autorClienteRest;
 
     @GetMapping
     public ResponseEntity<CollectionModel<EntityModel<Libros>>> listar() {
@@ -47,31 +55,51 @@ public class LibroController {
     }
 
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Libros libro) {
-        Libros libroDB = service.guardar(libro);
-        System.out.println("Acción de guardar/actualizar completada para el libro con ID: " + libro.getId());
-        EntityModel<Libros> resource = EntityModel.of(libroDB,
-                linkTo(methodOn(LibroController.class).obtenerPorId(libroDB.getId())).withSelfRel(),
-                linkTo(methodOn(LibroController.class).listar()).withRel("libros"));
-        return ResponseEntity.status(HttpStatus.CREATED).body(resource);
+    public ResponseEntity<?> crear(@Valid @RequestBody Libros libro) {
+        try {
+            // Buscar el autor por ID usando el cliente REST
+            Optional<AutorDTO> autorDTO = autorClienteRest.buscarPorId(libro.getAutorId());
+
+            if (autorDTO.isPresent()) {
+                // Poblar el campo autor con el nombre del AutorDTO
+                libro.setAutorId(autorDTO.get().getId());
+
+                // Guardar el libro con todos los campos completos
+                Libros libroDB = service.guardar(libro);
+                return ResponseEntity.status(HttpStatus.CREATED).body(libroDB);
+            } else {
+                return ResponseEntity.badRequest()
+                        .body("Autor con ID " + libro.getAutorId() + " no encontrado");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al crear el libro: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?>editar(@RequestBody Libros libro,@PathVariable Long id){
-        Optional<Libros>LibroOptional = service.buscarPorId(id);
-        if (LibroOptional.isPresent()){
-            Libros LibroDB = LibroOptional.get();
-            LibroDB.setTitulo(libro.getTitulo());
-            LibroDB.setAutor(libro.getAutor());
-            LibroDB.setGenero(libro.getGenero());
-            service.guardar(LibroDB);
-            EntityModel<Libros> resource = EntityModel.of(LibroDB,
-                    linkTo(methodOn(LibroController.class).obtenerPorId(LibroDB.getId())).withSelfRel(),
+    public ResponseEntity<?> editar(@Valid @RequestBody Libros libro, @PathVariable Long id){
+        Optional<Libros> libroOptional = service.buscarPorId(id);
+        if (libroOptional.isPresent()){
+            Libros libroDB = libroOptional.get();
+            libroDB.setTitulo(libro.getTitulo());
+            libroDB.setAutorId(libro.getAutorId());
+            libroDB.setGenero(libro.getGenero());
+            service.guardar(libroDB);
+            EntityModel<Libros> resource = EntityModel.of(libroDB,
+                    linkTo(methodOn(LibroController.class).obtenerPorId(libroDB.getId())).withSelfRel(),
                     linkTo(methodOn(LibroController.class).listar()).withRel("libros"));
-            return ResponseEntity.status(HttpStatus.CREATED).body(resource);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("message", "Libro actualizado exitosamente");
+            body.put("data", resource);
+
+            return ResponseEntity.ok(body);
         }
 
-        return ResponseEntity.notFound().build();
+        Map<String, Object> notFound = new HashMap<>();
+        notFound.put("message", "Libro no encontrado");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(notFound);
 
     }
 
@@ -80,9 +108,13 @@ public class LibroController {
         Optional<Libros> libroOptional = service.buscarPorId(id);
         if (libroOptional.isPresent()) {
             service.eliminarPorId(id);
-            System.out.println("Acción de eliminar completada para el libro con ID: " + id);
-            return ResponseEntity.noContent().build();
+            Map<String, Object> body = new HashMap<>();
+            body.put("message", "Libro eliminado exitosamente");
+            body.put("id", id);
+            return ResponseEntity.ok(body);
         }
-        return ResponseEntity.notFound().build();
+        Map<String, Object> notFound = new HashMap<>();
+        notFound.put("message", "Libro no encontrado");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(notFound);
     }
 }

@@ -1,29 +1,38 @@
+// src/main/java/com/espe/test/test/models/entities/Libros.java
 package com.espe.test.test.models.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.hateoas.RepresentationModel;
 
 @Entity
 @Table(name = "libro")
 public class Libros extends RepresentationModel<Libros> {
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
+    @Size(min = 3, max = 100)
+    @Pattern(regexp = "^[\\p{L}\\p{N} :]+$", message = "No se permiten caracteres especiales")
     private String titulo;
 
-    private String autor;
+    @Column(name = "autor_id")
+    @NotNull
+    private Long autor_id;
 
+
+
+
+    @NotBlank
+    @Size(min = 3, max = 50)
+    @Pattern(regexp = "^[\\p{L}\\p{N} ]+$", message = "No se permiten caracteres especiales")
     private String genero;
 
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
 
     public Long getId() {
         return id;
@@ -33,12 +42,20 @@ public class Libros extends RepresentationModel<Libros> {
         this.id = id;
     }
 
-    public String getAutor() {
-        return autor;
+    public String getTitulo() {
+        return titulo;
     }
 
-    public void setAutor(String autor) {
-        this.autor = autor;
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    @JsonProperty("autor_id")
+    public Long getAutorId() {
+        return autor_id;
+    }
+    public void setAutorId(Long autor_id) {
+        this.autor_id = autor_id;
     }
 
     public String getGenero() {

@@ -1,0 +1,39 @@
+#spring:
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: ${OAUTH_ISSUER_URI:http://127.0.0.1:9000}
+#      client:
+#        registration:
+#          libro:
+#            provider: oauth-server
+#            client-id: ${OAUTH_CLIENT_ID:libro}
+#            client-secret: ${OAUTH_CLIENT_SECRET:123456}
+#            authorization-grant-type: authorization_code
+#            redirect-uri: "${OAUTH_REDIRECT_URI:http://127.0.0.1:8001/authorized}"
+#            client-name: ${OAUTH_CLIENT_ID:libro}
+#            scope: openid,profile,read,write
+#        provider:
+#          oauth-server:
+#            issuer-uri: ${OAUTH_ISSUER_URI:http://127.0.0.1:9000}
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://127.0.0.1:9000
+      client:
+        registration:
+          libro-ms:
+            provider: oauth-server
+            client-id: libro-ms
+            client-secret: "12345"
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-name: libro-ms
+            scope: openid, profile, read, write
+        provider:
+          oauth-server:
+            issuer-uri: http://127.0.0.1:9000
